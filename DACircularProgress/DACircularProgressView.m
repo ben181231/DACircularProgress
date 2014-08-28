@@ -42,12 +42,17 @@
 - (void)drawInContext:(CGContextRef)context
 {
     CGRect rect = self.bounds;
-    CGPoint centerPoint = CGPointMake(rect.size.width / 2.0f, rect.size.height / 2.0f);
-    CGFloat radius = MIN(rect.size.height, rect.size.width) / 2.0f;
+    CGFloat minSide = MIN(rect.size.height, rect.size.width);
+    CGPoint centerPoint = CGPointMake(minSide/ 2.0f, minSide / 2.0f);
+    CGFloat radius = minSide / 2.0f;
     
     BOOL clockwise = (self.clockwiseProgress != 0);
     
     CGFloat progress = MIN(self.progress, 1.0f - FLT_EPSILON);
+    if(self.roundedCorners){
+        progress = MAX(FLT_EPSILON, progress);
+    }
+
     CGFloat radians = 0;
     if (clockwise)
     {
@@ -78,7 +83,7 @@
         CGPathRelease(progressPath);
     }
     
-    if (progress > 0.0f && self.roundedCorners) {
+    if (self.roundedCorners) {
         CGFloat pathWidth = radius * self.thicknessRatio;
         CGFloat xOffset = radius * (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * cosf(radians)));
         CGFloat yOffset = radius * (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * sinf(radians)));
