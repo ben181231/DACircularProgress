@@ -19,6 +19,8 @@
 @property(nonatomic) CGFloat progress;
 @property(nonatomic) NSInteger clockwiseProgress;
 @property(nonatomic) CGFloat rotationInDegree;
+@property(nonatomic) CGPoint startPoint;
+@property(nonatomic) CGPoint endPoint;
 
 @end
 
@@ -30,7 +32,7 @@
 @dynamic thicknessRatio;
 @dynamic progress;
 @dynamic clockwiseProgress;
-@dynamic rotationInDegree;
+
 
 + (BOOL)needsDisplayForKey:(NSString *)key
 {
@@ -94,24 +96,24 @@
         CGContextFillPath(context);
         CGPathRelease(progressPath);
     }
-    
+
+    CGFloat startXOffset =
+        radius * (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * cosf(rotation-M_PI_2)));
+    CGFloat startYOffset =
+        radius * (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * sinf(rotation-M_PI_2)));
+    CGFloat endXOffset =
+        radius * (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * cosf(radians)));
+    CGFloat endYOffset =
+        radius * (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * sinf(radians)));
+
+    self.startPoint = CGPointMake(startXOffset, startYOffset);
+    self.endPoint = CGPointMake(endXOffset, endYOffset);
+
     if (self.roundedCorners) {
         CGFloat pathWidth = radius * self.thicknessRatio;
-        CGFloat startXOffset = radius *
-            (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * cosf(rotation-M_PI_2)));
-        CGFloat startYOffset = radius *
-            (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * sinf(rotation-M_PI_2)));
-        CGFloat endXOffset =
-            radius * (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * cosf(radians)));
-        CGFloat endYOffset =
-            radius * (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * sinf(radians)));
-
-        CGPoint startPoint = CGPointMake(startXOffset, startYOffset);
-        CGPoint endPoint = CGPointMake(endXOffset, endYOffset);
-        
         CGRect startEllipseRect = (CGRect) {
-            .origin.x = startPoint.x - pathWidth / 2.0f,
-            .origin.y = startPoint.y - pathWidth / 2.0f,
+            .origin.x = self.startPoint.x - pathWidth / 2.0f,
+            .origin.y = self.startPoint.y - pathWidth / 2.0f,
             .size.width = pathWidth,
             .size.height = pathWidth
         };
@@ -119,8 +121,8 @@
         CGContextFillPath(context);
         
         CGRect endEllipseRect = (CGRect) {
-            .origin.x = endPoint.x - pathWidth / 2.0f,
-            .origin.y = endPoint.y - pathWidth / 2.0f,
+            .origin.x = self.endPoint.x - pathWidth / 2.0f,
+            .origin.y = self.endPoint.y - pathWidth / 2.0f,
             .size.width = pathWidth,
             .size.height = pathWidth
         };
@@ -184,6 +186,14 @@
     CGFloat windowContentsScale = self.window.screen.scale;
     self.circularProgressLayer.contentsScale = windowContentsScale;
     [self.circularProgressLayer setNeedsDisplay];
+}
+
+- (CGPoint)startPoint{
+    return [self circularProgressLayer].startPoint;
+}
+
+- (CGPoint)endPoint{
+    return [self circularProgressLayer].endPoint;
 }
 
 #pragma mark - Progress

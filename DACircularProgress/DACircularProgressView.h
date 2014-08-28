@@ -21,6 +21,9 @@
 @property(nonatomic) NSInteger indeterminate UI_APPEARANCE_SELECTOR; // Can not use BOOL with UI_APPEARANCE_SELECTOR :-(
 @property(nonatomic) CGFloat rotationInDegree UI_APPEARANCE_SELECTOR;
 
+@property(nonatomic, readonly) CGPoint startPoint;
+@property(nonatomic, readonly) CGPoint endPoint;
+
 - (void)setProgress:(CGFloat)progress animated:(BOOL)animated;
 - (void)setProgress:(CGFloat)progress animated:(BOOL)animated initialDelay:(CFTimeInterval)initialDelay;
 
