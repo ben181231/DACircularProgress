@@ -18,6 +18,7 @@
 @property(nonatomic) CGFloat thicknessRatio;
 @property(nonatomic) CGFloat progress;
 @property(nonatomic) NSInteger clockwiseProgress;
+@property(nonatomic) CGFloat rotationInDegree;
 
 @end
 
@@ -29,6 +30,7 @@
 @dynamic thicknessRatio;
 @dynamic progress;
 @dynamic clockwiseProgress;
+@dynamic rotationInDegree;
 
 + (BOOL)needsDisplayForKey:(NSString *)key
 {
@@ -63,6 +65,16 @@
         radians = (float)(3 * M_PI_2 - (progress * 2.0f * M_PI));
     }
     
+    CGFloat rotation = 0.0f;
+    if(self.rotationInDegree > 0.0f){
+        rotation = self.rotationInDegree / 180.0 * M_PI;
+        radians += rotation;
+
+        if(radians > 2 * M_PI){
+            radians -= 2 * M_PI;
+        }
+    }
+
     CGContextSetFillColorWithColor(context, self.trackTintColor.CGColor);
     CGMutablePathRef trackPath = CGPathCreateMutable();
     CGPathMoveToPoint(trackPath, NULL, centerPoint.x, centerPoint.y);
@@ -76,7 +88,7 @@
         CGContextSetFillColorWithColor(context, self.progressTintColor.CGColor);
         CGMutablePathRef progressPath = CGPathCreateMutable();
         CGPathMoveToPoint(progressPath, NULL, centerPoint.x, centerPoint.y);
-        CGPathAddArc(progressPath, NULL, centerPoint.x, centerPoint.y, radius, (float)(3.0f * M_PI_2), radians, !clockwise);
+        CGPathAddArc(progressPath, NULL, centerPoint.x, centerPoint.y, radius, (float)(3.0f * M_PI_2) + rotation, radians, !clockwise);
         CGPathCloseSubpath(progressPath);
         CGContextAddPath(context, progressPath);
         CGContextFillPath(context);
@@ -85,13 +97,21 @@
     
     if (self.roundedCorners) {
         CGFloat pathWidth = radius * self.thicknessRatio;
-        CGFloat xOffset = radius * (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * cosf(radians)));
-        CGFloat yOffset = radius * (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * sinf(radians)));
-        CGPoint endPoint = CGPointMake(xOffset, yOffset);
+        CGFloat startXOffset = radius *
+            (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * cosf(rotation-M_PI_2)));
+        CGFloat startYOffset = radius *
+            (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * sinf(rotation-M_PI_2)));
+        CGFloat endXOffset =
+            radius * (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * cosf(radians)));
+        CGFloat endYOffset =
+            radius * (1.0f + ((1.0f - (self.thicknessRatio / 2.0f)) * sinf(radians)));
+
+        CGPoint startPoint = CGPointMake(startXOffset, startYOffset);
+        CGPoint endPoint = CGPointMake(endXOffset, endYOffset);
         
         CGRect startEllipseRect = (CGRect) {
-            .origin.x = centerPoint.x - pathWidth / 2.0f,
-            .origin.y = 0.0f,
+            .origin.x = startPoint.x - pathWidth / 2.0f,
+            .origin.y = startPoint.y - pathWidth / 2.0f,
             .size.width = pathWidth,
             .size.height = pathWidth
         };
@@ -278,6 +298,17 @@
     } else {
         [self.layer removeAnimationForKey:@"indeterminateAnimation"];
     }
+}
+
+- (CGFloat)rotationInDegree
+{
+    return self.circularProgressLayer.rotationInDegree;
+}
+
+- (void)setRotationInDegree:(CGFloat)rotationInDegree
+{
+    self.circularProgressLayer.rotationInDegree = rotationInDegree;
+    [self.circularProgressLayer setNeedsDisplay];
 }
 
 - (NSInteger)clockwiseProgress
