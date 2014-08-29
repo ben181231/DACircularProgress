@@ -19,6 +19,7 @@
 @property(nonatomic) CGFloat progress;
 @property(nonatomic) NSInteger clockwiseProgress;
 @property(nonatomic) CGFloat rotationInDegree;
+@property(nonatomic) CGPoint centerPoint;
 @property(nonatomic) CGPoint startPoint;
 @property(nonatomic) CGPoint endPoint;
 
@@ -47,7 +48,7 @@
 {
     CGRect rect = self.bounds;
     CGFloat minSide = MIN(rect.size.height, rect.size.width);
-    CGPoint centerPoint = CGPointMake(minSide/ 2.0f, minSide / 2.0f);
+    CGPoint centerPoint = self.centerPoint = CGPointMake(minSide/ 2.0f, minSide / 2.0f);
     CGFloat radius = minSide / 2.0f;
     
     BOOL clockwise = (self.clockwiseProgress != 0);
@@ -193,6 +194,10 @@
     [self.circularProgressLayer setNeedsDisplay];
 }
 
+- (CGPoint)centerPoint{
+    return [self circularProgressLayer].centerPoint;
+}
+
 - (CGPoint)startPoint{
     return [self circularProgressLayer].startPoint;
 }
@@ -246,6 +251,74 @@
 {
    NSNumber *pinnedProgressNumber = [animation valueForKey:@"toValue"];
    self.circularProgressLayer.progress = [pinnedProgressNumber floatValue];
+}
+
+// helper function
+static CGFloat angleForVector(const CGVector vect)
+{
+    CGVector vectMutable = vect;
+    if (ABS(vectMutable.dx) < FLT_EPSILON) {
+        vectMutable.dx = vectMutable.dx < 0 ? -FLT_EPSILON : FLT_EPSILON;
+    }
+
+    if (ABS(vectMutable.dy) < FLT_EPSILON) {
+        vectMutable.dy = vectMutable.dy < 0 ? -FLT_EPSILON : FLT_EPSILON;
+    }
+
+    CGFloat result = atan2f(vectMutable.dx, vectMutable.dy);
+
+    return ABS(result) < FLT_EPSILON ? 0 : result;
+}
+
+// override
+- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event
+{
+    CGFloat radius = MIN(self.frame.size.width, self.frame.size.height) / 2.0f;
+    CGFloat innerRingRadius = radius * (1 - self.thicknessRatio);
+    CGPoint centerPoint = self.circularProgressLayer.centerPoint;
+    CGPoint startPoint = self.circularProgressLayer.startPoint;
+    CGPoint endPoint = self.circularProgressLayer.endPoint;
+
+    CGFloat centerDistance = hypotf(point.x - centerPoint.x, point.y - centerPoint.y);
+    if(centerDistance > radius){
+        return nil;
+    }
+
+    if(centerDistance < innerRingRadius){
+        return nil;
+    }
+
+    CGFloat startAngle = angleForVector((CGVector){centerPoint.x - startPoint.x,
+                                                   centerPoint.y - startPoint.y});
+    CGFloat endAngle = angleForVector((CGVector){centerPoint.x - endPoint.x,
+                                                 centerPoint.y - endPoint.y});
+    CGFloat currentAngle = angleForVector((CGVector){centerPoint.x - point.x,
+                                                     centerPoint.y - point.y});
+
+    startAngle -= self.rotationInDegree/180.0f*M_PI;
+    endAngle -= self.rotationInDegree/180.0f*M_PI;
+    currentAngle -= self.rotationInDegree/180.0f*M_PI;
+
+    if(self.clockwiseProgress) {
+        startAngle = M_PI * 2 - startAngle;
+        endAngle = M_PI * 2 - endAngle;
+        currentAngle = M_PI * 2 - currentAngle;
+    }
+
+    while (startAngle < 0) startAngle += M_PI * 2;
+    while (endAngle < 0) endAngle += M_PI * 2;
+    while (currentAngle < 0) currentAngle += M_PI * 2;
+
+    while (startAngle > M_PI * 2) startAngle -= M_PI * 2;
+    while (endAngle > M_PI * 2) endAngle -= M_PI * 2;
+    while (currentAngle > M_PI * 2) currentAngle -= M_PI * 2;
+
+    if(startAngle < currentAngle && currentAngle < endAngle){
+        return self;
+    }
+    else{
+        return nil;
+    }
 }
 
 #pragma mark - UIAppearance methods
