@@ -111,6 +111,13 @@
 
     if (self.roundedCorners) {
         CGFloat pathWidth = radius * self.thicknessRatio;
+
+        NSLog(@"Progress: %.1f", progress);
+
+        if(ABS(progress) == FLT_EPSILON){
+            pathWidth /= 2.0f;
+        }
+
         CGRect startEllipseRect = (CGRect) {
             .origin.x = self.startPoint.x - pathWidth / 2.0f,
             .origin.y = self.startPoint.y - pathWidth / 2.0f,
