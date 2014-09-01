@@ -112,8 +112,6 @@
     if (self.roundedCorners) {
         CGFloat pathWidth = radius * self.thicknessRatio;
 
-        NSLog(@"Progress: %.1f", progress);
-
         if(ABS(progress) == FLT_EPSILON){
             pathWidth /= 2.0f;
         }
